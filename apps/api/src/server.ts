@@ -1,25 +1,46 @@
 import dotenv from "dotenv";
-
 dotenv.config();
 
-import app from "./app";
-import { redisClient } from "./config/redis";
+import express from "express";
+import cors from "cors";
+
+const app = express();
 
 const PORT = process.env.PORT || 5000;
 
-async function startServer() {
-  try {
-    await redisClient.connect();
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
 
-    console.log("Redis connected successfully");
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
+  })
+);
 
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-}
+app.use(express.json());
 
-startServer();
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+  });
+});
+
+// your routes here
+// app.use("/api/auth", authRoutes);
+
+app.listen(PORT, () => {
+  console.log(
+    `Server running on http://localhost:${PORT}`
+  );
+});
