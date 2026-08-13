@@ -1,0 +1,35 @@
+services:
+
+  mysql:
+    image: mysql:8.4
+    container_name: ride-together-mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ride_together
+      MYSQL_USER: ride_user
+      MYSQL_PASSWORD: ride_password
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: ride-together-redis
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+
+
+volumes:
+  mysql_data:
+  redis_data:

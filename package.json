@@ -1,0 +1,8 @@
+{
+  "name": "ride-together",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

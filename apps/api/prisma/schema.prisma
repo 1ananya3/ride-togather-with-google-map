@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum RideStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum MemberRole {
+  CREATOR
+  MEMBER
+}
+
+enum MemberStatus {
+  INVITED
+  JOINED
+  LEFT
+}
+
+enum RideEventType {
+  JOINED
+  LEFT
+  RIDE_STARTED
+  RIDE_ENDED
+  STOP_STARTED
+  STOP_ENDED
+  REFUELING
+  BREAK
+  FOOD
+  VEHICLE_ISSUE
+  EMERGENCY
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  googleId      String   @unique
+  profileImage  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  rideMemberships RideMember[]
+  createdRides    Ride[] @relation("RideCreator")
+  locationHistory LocationHistory[]
+  rideEvents      RideEvent[]
+
+  @@map("users")
+}
+
+model Ride {
+  id              Int        @id @default(autoincrement())
+  name            String
+  origin          String
+  destination     String
+  routePolyline   String?    @db.Text
+  status          RideStatus @default(PLANNED)
+
+  createdById     Int
+  createdAt       DateTime   @default(now())
+  startedAt       DateTime?
+  endedAt         DateTime?
+
+  creator         User             @relation("RideCreator", fields: [createdById], references: [id])
+  members         RideMember[]
+  locations       LocationHistory[]
+  events          RideEvent[]
+
+  @@index([createdById])
+  @@index([status])
+  @@map("rides")
+}
+
+model RideMember {
+  id        Int          @id @default(autoincrement())
+  rideId    Int
+  userId    Int
+
+  role      MemberRole   @default(MEMBER)
+  status    MemberStatus @default(JOINED)
+
+  joinedAt  DateTime     @default(now())
+  leftAt    DateTime?
+
+  ride      Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rideId, userId])
+  @@index([userId])
+  @@map("ride_members")
+}
+
+model LocationHistory {
+  id          BigInt   @id @default(autoincrement())
+  rideId      Int
+  userId      Int
+
+  latitude    Decimal  @db.Decimal(10, 7)
+  longitude   Decimal  @db.Decimal(10, 7)
+
+  speed       Float?
+  heading     Float?
+  accuracy    Float?
+
+  recordedAt  DateTime @default(now())
+
+  ride        Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([rideId, userId, recordedAt])
+  @@index([rideId, recordedAt])
+  @@map("location_history")
+}
+
+model RideEvent {
+  id          BigInt         @id @default(autoincrement())
+  rideId      Int
+  userId      Int
+
+  type        RideEventType
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+
+  ride        Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([rideId, createdAt])
+  @@index([userId, createdAt])
+  @@map("ride_events")
+}
